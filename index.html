@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survey123 Auto Reload</title>
+</head>
+<body>
+
+    <h2>Survey123 Reload with Last Submission</h2>
+    
+    <!-- Embed Survey123 -->
+    <iframe id="surveyFrame" 
+        width="100%" height="800px" 
+        src="https://survey123.arcgis.com/share/f27c13d330404495a7ff4cb3b1ad211e" 
+        frameborder="0">
+    </iframe>
+
+    <script>
+        function getStoredSurveyData() {
+            return JSON.parse(localStorage.getItem("lastSurveyData")) || {};
+        }
+
+        function storeSurveyData(observer, species, age, sex) {
+            let surveyData = { observer, species, age, sex };
+            localStorage.setItem("lastSurveyData", JSON.stringify(surveyData));
+        }
+
+        function reloadSurveyWithLastSubmission() {
+            let lastData = getStoredSurveyData();
+            if (lastData.observer || lastData.species || lastData.age || lastData.sex) {
+                let newSurveyURL = `https://survey123.arcgis.com/share/f27c13d330404495a7ff4cb3b1ad211e?observer=${encodeURIComponent(lastData.observer || '')}&species=${encodeURIComponent(lastData.species || '')}&age=${encodeURIComponent(lastData.age || '')}&sex=${encodeURIComponent(lastData.sex || '')}`;
+                document.getElementById("surveyFrame").src = newSurveyURL;
+            }
+        }
+
+        function checkSurveySubmission() {
+            let surveyFrame = document.getElementById("surveyFrame");
+
+            surveyFrame.onload = function() {
+                let surveyURL = surveyFrame.contentWindow.location.href;
+
+                if (surveyURL.includes("success=true")) {
+                    console.log("Survey submitted! Storing last submission...");
+
+                    let urlParams = new URLSearchParams(surveyURL.split("?")[1]);
+                    let observer = urlParams.get("observer") || "";
+                    let species = urlParams.get("species") || "";
+                    let age = urlParams.get("age") || "";
+                    let sex = urlParams.get("sex") || "";
+
+                    storeSurveyData(observer, species, age, sex);
+
+                    setTimeout(() => {
+                        reloadSurveyWithLastSubmission();
+                    }, 2000);
+                }
+            };
+        }
+
+        // Run functions
+        checkSurveySubmission();
+        reloadSurveyWithLastSubmission();
+    </script>
+
+</body>
+</html>
